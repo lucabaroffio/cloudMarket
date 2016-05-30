@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.background {
+  fill: none;
+  pointer-events: all;
+}
+
+.graticule {
+  fill: none;
+  stroke: #777;
+  stroke-opacity: .5;
+  stroke-width: .5px;
+  pointer-events: none;
+}
+
+.land {
+  fill: #fff;
+  stroke: black;
+  stroke-width: 1.5px;
+}
+
+.border {
+  fill: none;
+  stroke: #000;
+  stroke-width: 1px;
+}
+
+.state {
+  fill: #aaa;
+}
+
+.country {
+  fill: #aaa;
+}
+
+.active {
+  display:none;
+  /*fill: red;*/
+}
+
+#state-borders {
+  fill: none;
+  stroke: #fff;
+  stroke-width: .5px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+#country-borders {
+  fill: none;
+  stroke: #fff;
+  stroke-width: .5px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.county-boundary {
+  fill: #aaa;
+  stroke: #fff;
+  stroke-width: .5px;
+}
+
+.county-boundary:hover, .state:hover, .country:hover {
+  fill: orange;
+}
+
+</style>
+<body>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="//d3js.org/topojson.v1.min.js"></script>
+<script>
+
+var width = 1024,
+    height = 768,
+    centered;
+
+var projection = d3.geo.mercator()
+    .scale(width / 2 / Math.PI)
+    .translate([width / 2, height / 2])
+    .precision(.1);
+
+var path = d3.geo.path()
+    .projection(projection);
+
+var graticule = d3.geo.graticule();
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+svg.append("rect")
+    .attr("class", "background")
+    .attr("width", width)
+    .attr("height", height)
+    .on("click", clicked);
+
+var g = svg.append("g");
+
+// svg.append("path")
+//     .datum(graticule)
+//     .attr("class", "graticule")
+//     .attr("d", path);
+
+d3.json("world.json", function(error, world) {
+  if (error) throw error;
+
+    g.append("g")
+      .attr("id", "states")
+    .selectAll("path")
+      .data(topojson.feature(world, world.objects.states).features)
+    .enter().append("path")
+  .attr("d", path)
+  .attr("class", "state")
+      .on("click", clicked);
+
+  g.append("path")
+    .datum(topojson.mesh(world, world.objects.states, function(a, b) { return a !== b; }))
+    .attr("id", "state-borders")
+    .attr("d", path);
+
+    g.append("g")
+      .attr("id", "countries")
+    .selectAll("path")
+      .data(topojson.feature(world, world.objects.countries).features)
+    .enter().append("path")
+  .attr("d", path)
+  .attr("class", "country")
+      .on("click", clicked);
+
+  g.append("path")
+    .datum(topojson.mesh(world, world.objects.countries, function(a, b) { return a !== b; }))
+    .attr("id", "country-borders")
+    .attr("d", path);
+
+  // g.append("path")
+  //   .datum(topojson.mesh(world, world.objects.states, function(a, b) { return a !== b; }))
+  //   .attr("id", "country-borders")
+  //   .attr("d", path);
+
+  // svg.insert("path", ".graticule")
+  //     .datum(topojson.merge(world, world.objects.states.geometries))
+  //     .attr("class", "land")
+  //     .attr("d", path);
+
+  // svg.insert("path", ".graticule")
+  //     .datum(topojson.mesh(world, world.objects.states, function(a, b) { return a !== b; }))
+  //     .attr("class", "border")
+  //     .attr("d", path);
+});
+
+function clicked(d) {
+  var x, y, k;
+
+  if (d && centered !== d) {
+    var centroid = path.centroid(d);
+    x = centroid[0];
+    y = centroid[1];
+    area = path.area(d);
+    k = 200/Math.sqrt(area);
+    centered = d;
+  } else {
+    x = width / 2;
+    y = height / 2;
+    k = 1;
+    centered = null;
+  }
+
+  g.selectAll("path")
+      .classed("active", centered && function(d) { return d === centered; });
+
+  g.transition()
+      .duration(750)
+      .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")scale(" + k + ")translate(" + -x + "," + -y + ")")
+      .style("stroke-width", 1.5 / k + "px");
+}
+
+// d3.select(self.frameElement).style("height", height + "px");
+
+</script>
