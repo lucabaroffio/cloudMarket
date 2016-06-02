@@ -20,7 +20,7 @@
 
 world.json: build10/ne_10m_admin_0_countries.shp build50/ne_50m_admin_1_states_provinces_shp.shp
 	node_modules/.bin/topojson \
-		--properties iso_2a,name=NAME \
+		--properties country_name=name,state_name=NAME,country_code=ISO_A2,state_code=postal \
 		-o $@ \
 		-q 1e5 \
 		--simplify-proportion .1 \
