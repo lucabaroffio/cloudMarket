@@ -194,7 +194,7 @@ d3.json("world.json", function(error, world) {
       .data(topojson.feature(world, world.objects.countries).features)
     .enter().append("path")
   .attr("d", path)
-  .attr("fill", function(d) { if (d.properties.country_code in series){ return paletteScale(series[d.properties.country_code]) } else {return '#ccc'}})
+  // .attr("fill", function(d) { if (d.properties.country_code in series){ return paletteScale(series[d.properties.country_code]) } else {return '#ccc'}})
   .attr("class", "country")
       .on("click", clicked);
 
