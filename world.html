@@ -1,5 +1,54 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<head>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="//d3js.org/topojson.v1.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+<script>
+$(document).ready(function(){
+  $.ajax({url: "https://ewwo3bwx3i.execute-api.us-east-1.amazonaws.com/prod/lambda_country", success: function(result){
+      var onlyValues = new Array();
+
+      for (var key in result) {
+        onlyValues.push(result[key]);
+      }
+
+      var minValue = Math.min.apply(null, onlyValues);
+      var maxValue = Math.max.apply(null, onlyValues);
+
+      var paletteScale = d3.scale.linear()
+        .domain([minValue,maxValue])
+        .range(["#CFDFFF","#02386F"]); // blue color
+
+      d3.select("svg")
+        .select("g")
+        .select("#countries")
+        .selectAll("path")
+        .attr("fill", function(d) { 
+              if (d.properties.country_code in result){ return paletteScale(result[d.properties.country_code]) } else {return '#eee'}
+        });;
+
+      d3.select("svg")
+        .select("g")
+        .select("#countries")
+        .selectAll("path")
+        .attr("value", function(d) { 
+              if (d.properties.country_code in result){ return result[d.properties.country_code]} else {return 0}
+        });;
+
+      // g.append("g")
+      //   .attr("id", "countries")
+      //   .selectAll("path")
+      //   .data(topojson.feature(world, world.objects.countries).features)
+      //   .enter().append("path")
+      //   .attr("d", path)
+      //   .attr("fill", function(d) { 
+      //         if (d.properties.country_code in series){ return paletteScale(series[d.properties.country_code]) } else {return '#ccc'}
+      //   })
+  }});
+});
+</script>
+</head>
 <style>
 
 .background {
@@ -28,7 +77,7 @@
 }
 
 .state {
-  fill: #bbb;
+  fill: #ccc;
 }
 
 /*.country {
@@ -68,16 +117,14 @@
 }
 
 .county-boundary:hover, .state:hover, .country:hover {
-  fill: #00ff00;
+  fill: #ffbb00;
 }
 
 </style>
 <body>
-<script src="//d3js.org/d3.v3.min.js"></script>
-<script src="//d3js.org/topojson.v1.min.js"></script>
 <script>
 
-var series = {"United States":20, "Brazil":30, "Italy":10, "France":40, "Russia": 90};
+var series = {"US":20, "BR":30, "IT":10, "FR":40, "RU": 90};
 
 var onlyValues = new Array();
 
@@ -147,7 +194,7 @@ d3.json("world.json", function(error, world) {
       .data(topojson.feature(world, world.objects.countries).features)
     .enter().append("path")
   .attr("d", path)
-  .attr("fill", function(d) { if (d.properties.name in series){ return paletteScale(series[d.properties.name]) } else {return '#ccc'}})
+  .attr("fill", function(d) { if (d.properties.country_code in series){ return paletteScale(series[d.properties.country_code]) } else {return '#ccc'}})
   .attr("class", "country")
       .on("click", clicked);
 
@@ -176,11 +223,11 @@ function is_a_country_to_be_hidden(d, centered) {
   if (d !== centered){
     return false
   }
-  if (d && 'properties' in d && 'name' in d.properties) {
-    return (d.properties.name == 'United States' ||
-            d.properties.name == 'Brazil' ||
-            d.properties.name == 'Canada' ||
-            d.properties.name == 'Australia');
+  if (d && 'properties' in d && 'country_code' in d.properties) {
+    return (d.properties.country_code == 'US' ||
+            d.properties.country_code == 'BR' ||
+            d.properties.country_code == 'CA' ||
+            d.properties.country_code == 'AU');
   } 
   else { 
     return false; 
