@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <head>
-<script src="//d3js.org/d3.v3.min.js"></script>
-<script src="//d3js.org/topojson.v1.min.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
 <script>
 $(document).ready(function(){
@@ -194,7 +194,7 @@ d3.json("world.json", function(error, world) {
       .data(topojson.feature(world, world.objects.countries).features)
     .enter().append("path")
   .attr("d", path)
-  // .attr("fill", function(d) { if (d.properties.country_code in series){ return paletteScale(series[d.properties.country_code]) } else {return '#ccc'}})
+  .attr("fill", "#eee")
   .attr("class", "country")
       .on("click", clicked);
 
@@ -242,7 +242,7 @@ function clicked(d) {
     x = centroid[0];
     y = centroid[1];
     area = path.area(d);
-    k = 200/Math.sqrt(area);
+    k = 200/Math.sqrt(area)  - 0.05*area;
     centered = d;
     g.selectAll("path")
       .classed("inactive", function(d) {return d !== centered});
