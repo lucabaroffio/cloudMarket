@@ -4,50 +4,6 @@
 <script src="https://d3js.org/d3.v3.min.js"></script>
 <script src="https://d3js.org/topojson.v1.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
-<script>
-$(document).ready(function(){
-  // $.ajax({url: "https://ewwo3bwx3i.execute-api.us-east-1.amazonaws.com/prod/lambda_country", success: function(result){
-  //     var onlyValues = new Array();
-
-  //     for (var key in result) {
-  //       onlyValues.push(result[key]);
-  //     }
-
-  //     var minValue = Math.min.apply(null, onlyValues);
-  //     var maxValue = Math.max.apply(null, onlyValues);
-
-  //     var paletteScale = d3.scale.linear()
-  //       .domain([minValue,maxValue])
-  //       .range(["#CFDFFF","#02386F"]); // blue color
-
-  //     d3.select("svg")
-  //       .select("g")
-  //       .select("#countries")
-  //       .selectAll("path")
-  //       .attr("fill", function(d) { 
-  //             if (d.properties.country_code in result){ return paletteScale(result[d.properties.country_code]) } else {return '#eee'}
-  //       });;
-
-  //     d3.select("svg")
-  //       .select("g")
-  //       .select("#countries")
-  //       .selectAll("path")
-  //       .attr("value", function(d) { 
-  //             if (d.properties.country_code in result){ return result[d.properties.country_code]} else {return 0}
-  //       });;
-
-      // g.append("g")
-      //   .attr("id", "countries")
-      //   .selectAll("path")
-      //   .data(topojson.feature(world, world.objects.countries).features)
-      //   .enter().append("path")
-      //   .attr("d", path)
-      //   .attr("fill", function(d) { 
-      //         if (d.properties.country_code in series){ return paletteScale(series[d.properties.country_code]) } else {return '#ccc'}
-      //   })
-  }});
-});
-</script>
 </head>
 <style>
 
@@ -120,25 +76,36 @@ $(document).ready(function(){
   fill: #ffbb00;
 }
 
+div.tooltip {
+  color: #222;
+  background-color: #fff;
+  padding: .5em;
+  text-shadow: #f5f5f5 0 1px 0;
+  border-radius: 2px;
+  opacity: 0.9;
+  position: absolute;
+}
+
+.hidden {
+        display: none;
+} 
+
+div.tooltip {
+    color: #222;
+    background-color: #fff;
+    padding: .5em;
+    text-shadow: #f5f5f5 0 1px 0;
+    border-radius: 2px;
+    opacity: 0.9;
+    position: absolute;
+}
+
 </style>
 <body>
 <script>
 
-var series = {"US":20, "BR":30, "IT":10, "FR":40, "RU": 90};
-
-var onlyValues = new Array();
-
-for (var key in series) {
-    onlyValues.push(series[key]);
-}
-
-var minValue = Math.min.apply(null, onlyValues);
-var maxValue = Math.max.apply(null, onlyValues);
-
-var paletteScale = d3.scale.linear()
-  .domain([minValue,maxValue])
-  .range(["#EFEFFF","#02386F"]); // blue color
-
+var tooltip = d3.select('body').append('div')
+            .attr('class', 'hidden tooltip');
 
 var width = 1024,
     height = 600,
@@ -165,11 +132,6 @@ svg.append("rect")
     .on("click", clicked);
 
 var g = svg.append("g");
-
-// svg.append("path")
-//     .datum(graticule)
-//     .attr("class", "graticule")
-//     .attr("d", path);
 
 d3.json("world.json", function(error, world) {
   if (error) throw error;
@@ -203,6 +165,27 @@ d3.json("world.json", function(error, world) {
     .attr("id", "country-borders")
     .attr("d", path);
 
+  // tooltip
+
+  d3.select("svg")
+    .select("g")
+    .select("#countries")
+    .selectAll("path")
+    .on('mousemove', function(d) {
+        var mouse = d3.mouse(svg.node()).map(function(d) {
+          return parseInt(d);
+        });
+        tooltip.classed('hidden', false)
+          .attr('style', 'left:' + (mouse[0] + 15) +
+                'px; top:' + (mouse[1] - 35) + 'px')
+          .html(has_data(this, d));
+          // .html("<table style='width:100%'><tr><td><em>"+d.properties.state_name+"</em></td></tr>" +
+          //       "<tr><td># of job posts:</td><td>"+this.getAttribute("job_num")+"</td></tr></table>"
+          // );
+    })
+    .on('mouseout', function() {
+        tooltip.classed('hidden', true);
+    });
 
   // color countries
 
@@ -232,25 +215,22 @@ d3.json("world.json", function(error, world) {
         .select("g")
         .select("#countries")
         .selectAll("path")
-        .attr("value", function(d) { 
+        .attr("job_num", function(d) { 
               if (d.properties.country_code in result){ return result[d.properties.country_code]} else {return 0}
         });
     }});
-  // g.append("path")
-  //   .datum(topojson.mesh(world, world.objects.states, function(a, b) { return a !== b; }))
-  //   .attr("id", "country-borders")
-  //   .attr("d", path);
-
-  // svg.insert("path", ".graticule")
-  //     .datum(topojson.merge(world, world.objects.states.geometries))
-  //     .attr("class", "land")
-  //     .attr("d", path);
-
-  // svg.insert("path", ".graticule")
-  //     .datum(topojson.mesh(world, world.objects.states, function(a, b) { return a !== b; }))
-  //     .attr("class", "border")
-  //     .attr("d", path);
 });
+
+function has_data(cur, d){
+  if (cur.getAttribute("job_num")>0){
+    return "<table style='width:100%'><tr><td><em>"+d.properties.state_name+"</em></td></tr>" +
+           "<tr><td># of job posts:</td><td>"+cur.getAttribute("job_num")+"</td></tr></table>";
+  }
+  else{
+    return "<table style='width:100%'><tr><td><em>"+d.properties.state_name+"</em></td></tr>" +
+           "<tr><td>No data</td></tr></table>";
+  }
+}
 
 function is_a_country_to_be_hidden(d, centered) {
   if (d !== centered){
@@ -275,7 +255,7 @@ function clicked(d) {
     x = centroid[0];
     y = centroid[1];
     area = path.area(d);
-    k = 150/Math.sqrt(area);
+    k = 270/Math.sqrt(area);
     centered = d;
     g.selectAll("path")
       .classed("inactive", function(d) {return d !== centered});
