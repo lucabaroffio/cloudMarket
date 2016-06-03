@@ -242,7 +242,7 @@ function clicked(d) {
     x = centroid[0];
     y = centroid[1];
     area = path.area(d);
-    k = 200/Math.sqrt(area)  - 0.005*Math.sqrt(area);
+    k = 200/Math.sqrt(area);
     centered = d;
     g.selectAll("path")
       .classed("inactive", function(d) {return d !== centered});
