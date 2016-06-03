@@ -6,35 +6,35 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
 <script>
 $(document).ready(function(){
-  $.ajax({url: "https://ewwo3bwx3i.execute-api.us-east-1.amazonaws.com/prod/lambda_country", success: function(result){
-      var onlyValues = new Array();
+  // $.ajax({url: "https://ewwo3bwx3i.execute-api.us-east-1.amazonaws.com/prod/lambda_country", success: function(result){
+  //     var onlyValues = new Array();
 
-      for (var key in result) {
-        onlyValues.push(result[key]);
-      }
+  //     for (var key in result) {
+  //       onlyValues.push(result[key]);
+  //     }
 
-      var minValue = Math.min.apply(null, onlyValues);
-      var maxValue = Math.max.apply(null, onlyValues);
+  //     var minValue = Math.min.apply(null, onlyValues);
+  //     var maxValue = Math.max.apply(null, onlyValues);
 
-      var paletteScale = d3.scale.linear()
-        .domain([minValue,maxValue])
-        .range(["#CFDFFF","#02386F"]); // blue color
+  //     var paletteScale = d3.scale.linear()
+  //       .domain([minValue,maxValue])
+  //       .range(["#CFDFFF","#02386F"]); // blue color
 
-      d3.select("svg")
-        .select("g")
-        .select("#countries")
-        .selectAll("path")
-        .attr("fill", function(d) { 
-              if (d.properties.country_code in result){ return paletteScale(result[d.properties.country_code]) } else {return '#eee'}
-        });;
+  //     d3.select("svg")
+  //       .select("g")
+  //       .select("#countries")
+  //       .selectAll("path")
+  //       .attr("fill", function(d) { 
+  //             if (d.properties.country_code in result){ return paletteScale(result[d.properties.country_code]) } else {return '#eee'}
+  //       });;
 
-      d3.select("svg")
-        .select("g")
-        .select("#countries")
-        .selectAll("path")
-        .attr("value", function(d) { 
-              if (d.properties.country_code in result){ return result[d.properties.country_code]} else {return 0}
-        });;
+  //     d3.select("svg")
+  //       .select("g")
+  //       .select("#countries")
+  //       .selectAll("path")
+  //       .attr("value", function(d) { 
+  //             if (d.properties.country_code in result){ return result[d.properties.country_code]} else {return 0}
+  //       });;
 
       // g.append("g")
       //   .attr("id", "countries")
@@ -202,6 +202,39 @@ d3.json("world.json", function(error, world) {
     .datum(topojson.mesh(world, world.objects.countries, function(a, b) { return a !== b; }))
     .attr("id", "country-borders")
     .attr("d", path);
+
+
+  // color countries
+
+  $.ajax({url: "https://ewwo3bwx3i.execute-api.us-east-1.amazonaws.com/prod/lambda_country", success: function(result){
+      var onlyValues = new Array();
+
+      for (var key in result) {
+        onlyValues.push(result[key]);
+      }
+
+      var minValue = Math.min.apply(null, onlyValues);
+      var maxValue = Math.max.apply(null, onlyValues);
+
+      var paletteScale = d3.scale.linear()
+        .domain([minValue,maxValue])
+        .range(["#CFDFFF","#02386F"]); // blue color
+
+      d3.select("svg")
+        .select("g")
+        .select("#countries")
+        .selectAll("path")
+        .attr("fill", function(d) { 
+              if (d.properties.country_code in result){ return paletteScale(result[d.properties.country_code]) } else {return '#eee'}
+        });;
+
+      d3.select("svg")
+        .select("g")
+        .select("#countries")
+        .selectAll("path")
+        .attr("value", function(d) { 
+              if (d.properties.country_code in result){ return result[d.properties.country_code]} else {return 0}
+        });;
 
   // g.append("path")
   //   .datum(topojson.mesh(world, world.objects.states, function(a, b) { return a !== b; }))
