@@ -3,6 +3,7 @@ import logging
 import db_config
 import psycopg2
 
+
 #rds settings
 rds_host  = db_config.rds_host
 name = db_config.username
@@ -24,15 +25,21 @@ def handler(event, context):
     This function fetches content from the RDS instance
     """
 
+    country = event.get("country", None)
     item_count = 0
 
-    result = {}
+    if country:
 
-    with conn.cursor() as cur:
-        cur.execute("SELECT country, count(*) FROM job_posts GROUP BY country")
-        rows = cur.fetchall()
-        for row in rows:
-            result[row[0]] = row[1]
+        result = {}
 
-    print result
-    return result
+        with conn.cursor() as cur:
+            cur.execute("SELECT state, count(*) FROM job_posts WHERE country = %s GROUP BY state", [country])
+            rows = cur.fetchall()
+            for row in rows:
+                result[row[0]] = row[1]
+
+        print result
+        return result
+    
+    else:
+        return {}
