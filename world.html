@@ -32,9 +32,9 @@
   stroke-width: 0.5px;
 }
 
-.state {
+/*.state {
   fill: #ccc;
-}
+}*/
 
 /*.country {
   fill: #bbb;
@@ -44,7 +44,7 @@
   display:none;
 }
 
-.inactive {
+.country.inactive {
   fill: #f2f2f2;
 }
 
@@ -143,7 +143,7 @@ d3.json("world.json", function(error, world) {
     .enter().append("path")
   .attr("d", path)
   .attr("class", "state")
-      // .on("click", clicked);
+    //.on("click", state_clicked);
 
   g.append("path")
     .datum(topojson.mesh(world, world.objects.states, function(a, b) { return a !== b; }))
@@ -179,6 +179,26 @@ d3.json("world.json", function(error, world) {
           .attr('style', 'left:' + (mouse[0] + 15) +
                 'px; top:' + (mouse[1] - 35) + 'px')
           .html(has_data(this, d));
+          // .html("<table style='width:100%'><tr><td><em>"+d.properties.state_name+"</em></td></tr>" +
+          //       "<tr><td># of job posts:</td><td>"+this.getAttribute("job_num")+"</td></tr></table>"
+          // );
+    })
+    .on('mouseout', function() {
+        tooltip.classed('hidden', true);
+    });
+
+  d3.select("svg")
+    .select("g")
+    .select("#states")
+    .selectAll("path")
+    .on('mousemove', function(d) {
+        var mouse = d3.mouse(svg.node()).map(function(d) {
+          return parseInt(d);
+        });
+        tooltip.classed('hidden', false)
+          .attr('style', 'left:' + (mouse[0] + 15) +
+                'px; top:' + (mouse[1] - 35) + 'px')
+          .html(has_data_state(this, d));
           // .html("<table style='width:100%'><tr><td><em>"+d.properties.state_name+"</em></td></tr>" +
           //       "<tr><td># of job posts:</td><td>"+this.getAttribute("job_num")+"</td></tr></table>"
           // );
@@ -228,6 +248,17 @@ function has_data(cur, d){
   }
   else{
     return "<table style='width:100%'><tr><td><em>"+d.properties.state_name+"</em></td></tr>" +
+           "<tr><td>No data</td></tr></table>";
+  }
+}
+
+function has_data_state(cur, d){
+  if (cur.getAttribute("job_num")>0){
+    return "<table style='width:100%'><tr><td><em>"+d.properties.country_name+"</em></td></tr>" +
+           "<tr><td># of job posts:</td><td>"+cur.getAttribute("job_num")+"</td></tr></table>";
+  }
+  else{
+    return "<table style='width:100%'><tr><td><em>"+d.properties.country_name+"</em></td></tr>" +
            "<tr><td>No data</td></tr></table>";
   }
 }
@@ -282,6 +313,52 @@ function clicked(d) {
       .duration(750)
       .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")scale(" + k + ")translate(" + -x + "," + -y + ")")
       .style("stroke-width", 1.5 / k + "px");
+
+  $.ajax({url: "https://nsfe6vh1wj.execute-api.us-east-1.amazonaws.com/prod/lambda_states?country="+d.properties.country_code, success: function(result, d){
+      var onlyValues = new Array();
+
+      for (var key in result) {
+        onlyValues.push(result[key]);
+      }
+
+      var minValue = Math.min.apply(null, onlyValues);
+      var maxValue = Math.max.apply(null, onlyValues);
+
+      var paletteScale = d3.scale.linear()
+        .domain([minValue,maxValue])
+        .range(["#CFDFFF","#02386F"]); // blue color
+
+      d3.select("svg")
+        .select("g")
+        .select("#states")
+        .classed("inactive", false);
+
+      d3.select("svg")
+        .select("g")
+        .select("#states")
+        .selectAll("path")
+        .attr("fill", function(p) { 
+              if (p && p.properties && p.properties.state_code in result){
+                return paletteScale(result[p.properties.state_code]);
+              }
+              else{
+                return '#eee';
+              }
+        });;
+
+      d3.select("svg")
+        .select("g")
+        .select("#states")
+        .selectAll("path")
+        .attr("job_num", function(p) { 
+              if (p && p.properties && p.properties.state_code in result){ 
+                return result[p.properties.state_code];
+              } 
+              else {
+                return 0;
+              }
+        });
+    }});
 }
 
 // d3.select(self.frameElement).style("height", height + "px");
