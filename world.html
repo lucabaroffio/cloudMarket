@@ -142,6 +142,7 @@ d3.json("world.json", function(error, world) {
       .data(topojson.feature(world, world.objects.states).features)
     .enter().append("path")
   .attr("d", path)
+  .attr("fill", "#eee")
   .attr("class", "state")
     //.on("click", state_clicked);
 
