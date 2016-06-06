@@ -252,6 +252,24 @@ d3.json("world.json", function(error, world) {
         })
         .attr("numjobs3", function(d) { 
               if (d.properties.country_code in result && "numjobs3" in result[d.properties.country_code]){ return result[d.properties.country_code]["numjobs3"]} else {return null}
+        })
+        .attr("jobtitle1", function(d) { 
+              if (d.properties.country_code in result && "jobtitle1" in result[d.properties.country_code]){ return result[d.properties.country_code]["jobtitle1"]} else {return null}
+        })
+        .attr("jobtitle2", function(d) { 
+              if (d.properties.country_code in result && "jobtitle2" in result[d.properties.country_code]){ return result[d.properties.country_code]["jobtitle2"]} else {return null}
+        })
+        .attr("jobtitle3", function(d) { 
+              if (d.properties.country_code in result && "jobtitle3" in result[d.properties.country_code]){ return result[d.properties.country_code]["jobtitle3"]} else {return null}
+        })
+        .attr("numjobstitle1", function(d) { 
+              if (d.properties.country_code in result && "numjobstitle1" in result[d.properties.country_code]){ return result[d.properties.country_code]["numjobstitle1"]} else {return null}
+        })
+        .attr("numjobstitle2", function(d) { 
+              if (d.properties.country_code in result && "numjobstitle2" in result[d.properties.country_code]){ return result[d.properties.country_code]["numjobstitle2"]} else {return null}
+        })
+        .attr("numjobstitle3", function(d) { 
+              if (d.properties.country_code in result && "numjobstitle3" in result[d.properties.country_code]){ return result[d.properties.country_code]["numjobstitle3"]} else {return null}
         });
 
       // d3.select("svg")
@@ -266,12 +284,17 @@ d3.json("world.json", function(error, world) {
 
 function has_data(cur, d){
   if (cur.getAttribute("job_num")>0){
-    return "<table style='width:100%'><tr><td><em>"+d.properties.state_name+"</em></td></tr>" +
+    return "<table style='width:100%'><tr><td><em>"+d.properties.state_name+"</em></td></tr>"+
            "<tr><td># of job posts:</td><td>"+cur.getAttribute("job_num")+"</td></tr>"+
            "<tr><td><em>Most popular companies:</em></td></tr>"+
            "<tr><td>"+cur.getAttribute("company1")+"</td><td>"+cur.getAttribute("numjobs1")+" jobs</td></tr>"+
            "<tr><td>"+cur.getAttribute("company2")+"</td><td>"+cur.getAttribute("numjobs2")+" jobs</td></tr>"+
-           "<tr><td>"+cur.getAttribute("company3")+"</td><td>"+cur.getAttribute("numjobs3")+" jobs</td></tr></table>";
+           "<tr><td>"+cur.getAttribute("company3")+"</td><td>"+cur.getAttribute("numjobs3")+" jobs</td></tr>"+
+           "<tr><td><em>Most popular job titles:</em></td></tr>"+
+           "<tr><td>"+cur.getAttribute("jobtitle1")+"</td><td>"+cur.getAttribute("numjobstitle1")+" jobs</td></tr>"+
+           "<tr><td>"+cur.getAttribute("jobtitle2")+"</td><td>"+cur.getAttribute("numjobstitle2")+" jobs</td></tr>"+
+           "<tr><td>"+cur.getAttribute("jobtitle3")+"</td><td>"+cur.getAttribute("numjobstitle3")+" jobs</td></tr>"+
+           "</table>";
   }
   else{
     return "<table style='width:100%'><tr><td><em>"+d.properties.state_name+"</em></td></tr>" +

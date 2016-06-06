@@ -55,4 +55,21 @@ SELECT country, company, count, rank FROM temp2 WHERE rank <= 3"""
             result[row[0]]["company%s" % row[3]] = row[1]
             result[row[0]]["numjobs%s" % row[3]] = row[2]
 
+        query = """WITH temp AS
+(SELECT country, jobtitle, count(*) FROM job_posts WHERE jobtitle IS NOT NULL AND jobtitle != '' GROUP BY country, jobtitle ORDER BY count DESC),
+
+temp2 AS
+(SELECT *, ROW_NUMBER() OVER(PARTITION BY country ORDER BY count DESC) as rank FROM temp)
+
+SELECT country, jobtitle, count, rank FROM temp2 WHERE rank <= 3"""
+        
+        cur.execute(query)
+        rows = cur.fetchall()
+        for row in rows:
+            if row[0] not in result:
+                result[row[0]] = {}
+
+            result[row[0]]["jobtitle%s" % row[3]] = row[1]
+            result[row[0]]["numjobstitle%s" % row[3]] = row[2]
+
     return result
