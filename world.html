@@ -125,6 +125,9 @@ var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
 
+var jobtitles = d3.select('body').append('div')
+    .attr('id', 'jobtitles')
+
 svg.append("rect")
     .attr("class", "background")
     .attr("width", width)
@@ -280,7 +283,29 @@ d3.json("world.json", function(error, world) {
       //         if (d.properties.country_code in result){ return result[d.properties.country_code]["job_num"]} else {return 0}
       //   });
     }});
+
+    jobtitles.html()
+    
+    $.ajax({url: "https://l3r2cohdzi.execute-api.us-east-1.amazonaws.com/prod/lambda_jobtitle", success: function(result){
+
+      jobtitles.html(get_jobtitles_html(result));
+    
+    }});
+    
 });
+
+function get_jobtitles_html(result){
+  ret = "<table style='width:100%'><th><em>Most popular job titles</em></th>"
+
+  for (var i = 0; i < result.length; i++) {
+    jobtitle = result[i]["jobtitle"];
+    count = result[i]["count"];
+    ret += "<tr><td>"+jobtitle+"</td><td>"+count+" jobs</td></tr>"
+  }
+
+  ret += "</table>"
+  return ret
+}
 
 function has_data(cur, d){
   if (cur.getAttribute("job_num")>0){
