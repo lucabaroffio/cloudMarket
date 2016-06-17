@@ -48,6 +48,7 @@
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
 	<script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
 	<script src="http://d3js.org/topojson.v1.min.js"></script>
+	<script src='//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js'></script>
 
 	<!-- <script type="text/javascript" src="us-states.js"></script> -->
 	<script type="text/javascript">
@@ -65,7 +66,7 @@
 	        return latlng.wrap();
 	    }
 
-		var map = new L.Map("map", {center: [30, 0], zoom: 2, noWrap: true})
+		var map = new L.Map("map", {center: [30, 0], zoom: 2, noWrap: true, minZoom: 2})
     		.addLayer(new L.TileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"));
 
 		// TopoJson to GeoJSON for Leafletjs
@@ -121,7 +122,7 @@
 
 		function addTopoData(topoData){
 		  topoLayer.addData(topoData);
-		  topoLayer.addTo(map);
+		  // topoLayer.addTo(map);
 		}
 
 		// control that shows state info on hover
@@ -134,8 +135,8 @@
 		};
 
 		info.update = function (props) {
-			this._div.innerHTML = '<h4>US Population Density</h4>' +  (props ?
-				'<b>' + props.name + '</b><br />' + props.density + ' people / mi<sup>2</sup>'
+			this._div.innerHTML = '<h4>Cloud job market</h4>' +  (props ?
+				'<b>' + ("country_name" in props ? props.country_name : props.state_name) + '</b><br />' + props.density + ' people / mi<sup>2</sup>'
 				: 'Hover over a state');
 		};
 
@@ -185,7 +186,9 @@
 		var geojson;
 
 		function resetHighlight(e) {
-			geojson.resetStyle(e.target);
+			a = 1;
+			layer = e.target;
+			layer.setStyle(style(layer.feature));
 			info.update();
 		}
 
@@ -201,10 +204,13 @@
 			});
 		}
 
-		// geojson = L.geoJson(statesData, {
-		// 	style: style,
-		// 	onEachFeature: onEachFeature
-		// }).addTo(map);
+		geojson = L.geoJson(null, {
+				style: style,
+				onEachFeature: onEachFeature
+			});
+			// .addTo(map);
+
+		geojson_layer = omnivore.topojson('world.json', null, geojson).addTo(map);
 
 		map.attributionControl.addAttribution('Population data &copy; <a href="http://census.gov/">US Census Bureau</a>');
 
