@@ -87,6 +87,8 @@
 
 		info.addTo(map);
 
+		selected = null;
+
 		// get color depending on population density value
 		function getColor(d) {
 			return d > 10000 ? '#800026' :
@@ -109,8 +111,38 @@
 			};
 		}
 
+		function style_default() {
+			return {
+				weight: 1,
+				opacity: 1,
+				color: 'white',
+				fillOpacity: 0.6,
+				fillColor: '#EEE'
+			};
+		}
+
+		function style_default_hl() {
+			return {
+				weight: 5,
+				opacity: 1,
+				color: '#666',
+				fillOpacity: 0.6,
+				fillColor: '#EEE'
+			};
+		}
+
+		function check_countries(country_code){
+			return (country_code == 'US' || country_code == 'AU' || country_code == "CA" || country_code == 'BR');
+		}
+
 		function highlightFeature(e) {
 			var layer = e.target;
+			if (selected != null && "country_code" in selected.feature.properties && check_countries(selected.feature.properties.country_code)){
+				layer.setStyle(
+					style_default_hl()
+				);
+				return;
+			}
 
 			layer.setStyle({
 				weight: 5,
@@ -129,8 +161,13 @@
 		var geojson;
 
 		function resetHighlight(e) {
-			a = 1;
 			layer = e.target;
+			if (selected != null && "country_code" in selected.feature.properties && check_countries(selected.feature.properties.country_code)){
+				layer.setStyle(
+					style_default()
+				);
+				return;
+			}
 			layer.setStyle(style(layer.feature));
 			info.update();
 		}
@@ -138,14 +175,37 @@
 		function clickCallback(e) {
 			zoomToFeature(e)
 			var layer = e.target;
+			selected = layer;
 			if ("country_code" in layer.feature.properties){
-				for (var layer_idx in geojson._layers){
-      	  			var layer_temp = geojson._layers[layer_idx];
-      	  			if ("state_code" in layer_temp.feature.properties){
-      	  				layer_temp.bringToBack();
-      	  			}
-      	  		}
-      	  		layer.bringToBack();
+				var country_code = layer.feature.properties.country_code;
+				if (!check_countries(country_code)){
+					for (var layer_idx in geojson._layers){
+			      	  	var layer_temp = geojson._layers[layer_idx];
+			      	  	if ("state_code" in layer_temp.feature.properties){
+			      	  		layer_temp.bringToBack();
+			      	  	}
+			      	  	layer_temp.setStyle(style(layer_temp.feature));
+			      	}
+					return
+				}
+				$.ajax({url: "https://9fyijdukrl.execute-api.us-east-1.amazonaws.com/prod/numjobs/" + layer.feature.properties.country_code, success: function(result){
+				      	  
+		      	  for (var layer_idx in geojson._layers){
+		      	  	var layer_temp = geojson._layers[layer_idx];
+		      	  	if ("country_code" in layer_temp.feature.properties){
+		      	  		layer_temp.setStyle(style_default());
+		      	  		continue;
+		      	  	}
+		      	  	if ("state_code" in layer_temp.feature.properties){
+		      	  		layer_temp.bringToBack();
+		      	  		if (layer_temp.feature.properties.state_code in result){
+		      	  	  		layer_temp.feature.properties.job_num = result[layer_temp.feature.properties.state_code].job_num;
+		      	  	  		layer_temp.setStyle(style(layer_temp.feature));
+		      	  		}
+		      	  	}
+		      	  }
+		      	  layer.bringToBack();
+			    }});
       	  	}
 		}
 
@@ -174,9 +234,8 @@
 
 		map.attributionControl.addAttribution('Cloud job market &copy; <a href="http://cloudacademy.com/">Cloud Academy, Inc.</a>');
 
-		$.ajax({url: "https://wpsr106vk8.execute-api.us-east-1.amazonaws.com/prod", success: function(result){
+		$.ajax({url: "https://9fyijdukrl.execute-api.us-east-1.amazonaws.com/prod/numjobs", success: function(result){
       	  
-      	  var a = 1;
       	  for (var layer_idx in geojson._layers){
       	  	var layer = geojson._layers[layer_idx];
       	  	if ("state_code" in layer.feature.properties){
