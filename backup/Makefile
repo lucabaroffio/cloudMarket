@@ -21,7 +21,7 @@
 world.json: build10/ne_10m_admin_0_countries.shp build50/ne_50m_admin_1_states_provinces_shp.shp
 	node_modules/.bin/topojson \
 		--stitch-poles false \
-		--properties country_name=NAME,state_name=name,country_code=ISO_A2,state_code=postal \
+		--properties parent_country=iso_a2,country_name=NAME,state_name=name,country_code=ISO_A2,state_code=postal, \
 		-o $@ \
 		-q 1e5 \
 		--simplify-proportion .1 \

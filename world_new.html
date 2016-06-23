@@ -66,7 +66,7 @@
 	        return latlng.wrap();
 	    }
 
-		var map = new L.Map("map", {center: [30, 5], zoom: 2, noWrap: true, minZoom: 2})
+		var map = new L.Map("map", {center: [30, 5], zoom: 2, noWrap: true, minZoom: 2, maxZoom: 6})
     		.addLayer(new L.TileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"));
 
 		// control that shows state info on hover
@@ -131,29 +131,33 @@
 			};
 		}
 
+		function style_hidden() {
+			return {
+				weight: 1,
+				opacity: 1,
+				color: 'white',
+				fillOpacity: 0.0,
+				fillColor: '#EEE'
+			};
+		}
+
 		function check_countries(country_code){
 			return (country_code == 'US' || country_code == 'AU' || country_code == "CA" || country_code == 'BR');
 		}
 
 		function highlightFeature(e) {
 			var layer = e.target;
-			if (selected != null && "country_code" in selected.feature.properties && check_countries(selected.feature.properties.country_code)){
-				layer.setStyle(
-					style_default_hl()
-				);
-				return;
-			}
-
 			layer.setStyle({
 				weight: 5,
 				color: '#666',
 				dashArray: '',
-				fillOpacity: 0.6
+				fillOpacity: 0.6,
+				fillColor: getColor(layer.feature.properties.job_num)
 			});
 
-			if (!L.Browser.ie && !L.Browser.opera) {
-				layer.bringToFront();
-			}
+			// if (!L.Browser.ie && !L.Browser.opera) {
+			// 	layer.bringToFront();
+			// }
 
 			info.update(layer.feature.properties);
 		}
@@ -162,55 +166,102 @@
 
 		function resetHighlight(e) {
 			layer = e.target;
-			if (selected != null && "country_code" in selected.feature.properties && check_countries(selected.feature.properties.country_code)){
-				layer.setStyle(
-					style_default()
-				);
-				return;
-			}
-			layer.setStyle(style(layer.feature));
+			layer.setStyle(layer.feature.properties.current_style);
 			info.update();
 		}
 
 		function clickCallback(e) {
 			zoomToFeature(e)
 			var layer = e.target;
-			selected = layer;
+			// country clicked
 			if ("country_code" in layer.feature.properties){
 				var country_code = layer.feature.properties.country_code;
-				if (!check_countries(country_code)){
-					for (var layer_idx in geojson._layers){
+				// a country to be expanded
+				if (check_countries(country_code)){
+					$.ajax({url: "https://9fyijdukrl.execute-api.us-east-1.amazonaws.com/prod/numjobs/" + layer.feature.properties.country_code, success: function(result){
+					      	  
+			      	  for (var layer_idx in geojson._layers){
 			      	  	var layer_temp = geojson._layers[layer_idx];
-			      	  	if ("state_code" in layer_temp.feature.properties){
+			      	  	
+			      	  	if ("state_code" in layer_temp.feature.properties && layer_temp.feature.properties.parent_country == country_code){
+			      	  		if (layer_temp.feature.properties.state_code in result){
+			      	  	  		layer_temp.feature.properties.job_num = result[layer_temp.feature.properties.state_code].job_num;
+			      	  	  		layer_temp.setStyle(style(layer_temp.feature));
+			      	  	  		layer_temp.feature.properties.current_style = style(layer_temp.feature);
+			      	  		}
+			      	  		layer_temp.bringToFront();
+			      	  	}
+			      	  	else if ("state_code" in layer_temp.feature.properties && layer_temp.feature.properties.parent_country != country_code){
+			      	  		layer_temp.setStyle(style_hidden());
+			      	  		layer_temp.feature.properties.current_style = style_hidden();
 			      	  		layer_temp.bringToBack();
 			      	  	}
-			      	  	layer_temp.setStyle(style(layer_temp.feature));
+			      	  	else if ("country_code" in layer_temp.feature.properties && layer_temp.feature.properties.country_code != country_code){
+			      	  		layer_temp.setStyle(style(layer_temp.feature));
+			      	  		layer_temp.feature.properties.current_style = style(layer_temp.feature);
+			      			layer_temp.bringToFront();
+			      	  	}
+			      	  	else if ("country_code" in layer_temp.feature.properties && layer_temp.feature.properties.country_code == country_code){
+			      	  		layer_temp.setStyle(style_hidden());
+			      	  		layer_temp.feature.properties.current_style = style_hidden()
+			      			layer_temp.bringToBack();
+			      	  	}			      
+			      	  }
+			      	  layer.bringToBack();
+				    }});
+      	  		}
+      	  		// country clicked, not to be expanded
+      	  		for (var layer_idx in geojson._layers){
+			      	var layer_temp = geojson._layers[layer_idx];
+			      	  	
+			      	if ("state_code" in layer_temp.feature.properties){
+			      		layer_temp.setStyle(style_hidden());
+			      		layer_temp.feature.properties.current_style = style_hidden()
+			      		layer_temp.bringToBack();
 			      	}
-					return
-				}
-				$.ajax({url: "https://9fyijdukrl.execute-api.us-east-1.amazonaws.com/prod/numjobs/" + layer.feature.properties.country_code, success: function(result){
-				      	  
-		      	  for (var layer_idx in geojson._layers){
-		      	  	var layer_temp = geojson._layers[layer_idx];
-		      	  	if ("country_code" in layer_temp.feature.properties){
-		      	  		layer_temp.setStyle(style_default());
-		      	  		continue;
-		      	  	}
-		      	  	if ("state_code" in layer_temp.feature.properties){
-		      	  		layer_temp.bringToBack();
-		      	  		if (layer_temp.feature.properties.state_code in result){
-		      	  	  		layer_temp.feature.properties.job_num = result[layer_temp.feature.properties.state_code].job_num;
-		      	  	  		layer_temp.setStyle(style(layer_temp.feature));
-		      	  		}
-		      	  	}
-		      	  }
-		      	  layer.bringToBack();
-			    }});
+			      	if ("country_code" in layer_temp.feature.properties){
+			      		layer_temp.setStyle(style(layer_temp.feature));
+			      		layer_temp.feature.properties.current_style = style(layer_temp.feature);
+			      		layer_temp.bringToFront();
+			      	}
+			    }
       	  	}
+      	  	selected = layer;
 		}
 
 		function zoomToFeature(e) {
-			map.fitBounds(e.target.getBounds());
+			// a = e.target.getBounds();
+			// area = (a._northEast.lat - a._southWest.lat)*(a._northEast.lng - a._southWest.lng);
+			// lat = (a._northEast.lat + a._southWest.lat)/2;
+			// lng = (a._northEast.lng + a._southWest.lng)/2
+			// map.setView([lat, lng], 1000/area);
+
+			layer = e.target;
+			bounds = e.target.getBounds();
+			if (layer.feature.properties.country_code == 'US'){
+				bounds._northEast.lat = 55;
+				bounds._northEast.lng = -70;
+				bounds._southWest.lat = 40;
+				bounds._southWest.lng = -160;
+				map.fitBounds(bounds);
+			}
+			else if (layer.feature.properties.country_code == 'CA'){
+				bounds._northEast.lat = 73;
+				bounds._northEast.lng = -56;
+				bounds._southWest.lat = 48;
+				bounds._southWest.lng = -142;
+				map.fitBounds(bounds);
+			}
+			else if (layer.feature.properties.country_code == 'RU'){
+				bounds._northEast.lat = 71;
+				bounds._northEast.lng = 169;
+				bounds._southWest.lat = 43;
+				bounds._southWest.lng = 27;
+				map.fitBounds(bounds);
+			} 
+			else {
+				map.fitBounds(e.target.getBounds());
+			}
 		}
 
 		function onEachFeature(feature, layer) {
@@ -245,6 +296,7 @@
       	  	  layer.feature.properties.job_num = result[layer.feature.properties.country_code].job_num;
       	  	}
       	  	layer.setStyle(style(layer.feature));
+      	  	layer.feature.properties.current_style = style(layer.feature);
       	  }
 	    }});
 
