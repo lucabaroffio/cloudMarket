@@ -44,6 +44,7 @@
 </head>
 <body>
 	<div id="map"></div>
+	<div id="job_titles"></div>
 
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
 	<script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
@@ -170,9 +171,53 @@
 			info.update();
 		}
 
+		function get_jobtitles_html(result){
+		  ret = "<table style='width:100%'><th><em>Most popular job titles</em></th>"
+
+		  for (var i = 0; i < result.length; i++) {
+		    jobtitle = result[i]["jobtitle"];
+		    count = result[i]["count"];
+		    ret += "<tr><td>"+jobtitle+"</td><td>"+count+" jobs</td></tr>"
+		  }
+
+		  ret += "</table>"
+		  return ret
+		}
+
+		function update_job_titles(jobtitles_div, country, state){
+
+			call_string = "https://9fyijdukrl.execute-api.us-east-1.amazonaws.com/prod/job-titles/";
+
+			if (country != null && state != null){
+				call_string += (country + "/" + state + "/");
+			}
+			else if (country != null){
+				call_string += (country + "/");
+			}
+			
+			$.ajax({url: call_string, success: function(result){
+		           jobtitles_div.html(get_jobtitles_html(result));
+		    }});
+    
+		}
+
 		function clickCallback(e) {
 			zoomToFeature(e)
 			var layer = e.target;
+
+			country = null;
+			state = null;
+
+			if ("country_code" in layer.feature.properties){
+				country = layer.feature.properties.country_code;
+			}
+			else if ("state_code" in layer.feature.properties){
+				state = layer.feature.properties.state_code;
+				country = layer.feature.properties.parent_country;
+			}
+
+			update_job_titles($("#job_titles"), country, state);
+
 			// country clicked
 			if ("country_code" in layer.feature.properties){
 				var country_code = layer.feature.properties.country_code;
@@ -284,6 +329,15 @@
 		geojson_layer = omnivore.topojson('world.json', null, geojson).addTo(map);
 
 		map.attributionControl.addAttribution('Cloud job market &copy; <a href="http://cloudacademy.com/">Cloud Academy, Inc.</a>');
+
+		for (var layer_idx in geojson._layers){
+      	  	var layer = geojson._layers[layer_idx];
+      	  	layer.feature.properties.current_style = style(layer.feature);
+      	}
+
+      	// init the values
+
+      	update_job_titles($("#job_titles"), null, null);
 
 		$.ajax({url: "https://9fyijdukrl.execute-api.us-east-1.amazonaws.com/prod/numjobs", success: function(result){
       	  
