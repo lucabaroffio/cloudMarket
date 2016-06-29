@@ -11,12 +11,18 @@
 
 	<style>
 		#map {
-			width: 980px;
+			width: 850px;
 			height: 600px;
+			float:left;
 		}
 
 		#job_titles{
-			width: 980px;
+			width: 400px;
+		}
+
+		#job_locations{
+			width: 400px;
+			float:left;
 		}
 
 		.info {
@@ -48,7 +54,9 @@
 </head>
 <body>
 	<div id="map"></div>
+	<div id="job_locations"></div>
 	<div id="job_titles"></div>
+
 
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
 	<script src="//cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
@@ -112,7 +120,7 @@
 				opacity: 1,
 				color: 'white',
 				fillOpacity: 0.6,
-				fillColor: getColor(feature.properties.job_num)
+				fillColor: "job_num" in feature.properties ? getColor(feature.properties.job_num) : '#EEE'
 			};
 		}
 
@@ -205,6 +213,36 @@
     
 		}
 
+		function get_joblocations_html(result){
+		  ret = "<table style='width:100%'><th><em>Most popular locations</em></th>"
+
+		  for (var i = 0; i < result.length; i++) {
+		    loc = result[i]["location"];
+		    count = result[i]["count"];
+		    ret += "<tr><td>"+loc+"</td><td>"+count+" jobs</td></tr>"
+		  }
+
+		  ret += "</table>"
+		  return ret
+		}
+
+		function update_job_locations(joblocations_div, country, state){
+
+			call_string = "https://9fyijdukrl.execute-api.us-east-1.amazonaws.com/prod/locations/";
+
+			if (country != null && state != null){
+				call_string += (country + "/" + state + "/");
+			}
+			else if (country != null){
+				call_string += (country + "/");
+			}
+			
+			$.ajax({url: call_string, success: function(result){
+		           joblocations_div.html(get_joblocations_html(result));
+		    }});
+    
+		}
+
 		function clickCallback(e) {
 			zoomToFeature(e)
 			var layer = e.target;
@@ -221,6 +259,7 @@
 			}
 
 			update_job_titles($("#job_titles"), country, state);
+			update_job_locations($("#job_locations"), country, state);
 
 			// country clicked
 			if ("country_code" in layer.feature.properties){
@@ -342,6 +381,7 @@
       	// init the values
 
       	update_job_titles($("#job_titles"), null, null);
+      	update_job_locations($("#job_locations"), null, null);
 
 		$.ajax({url: "https://9fyijdukrl.execute-api.us-east-1.amazonaws.com/prod/numjobs", success: function(result){
       	  
@@ -358,7 +398,7 @@
       	  }
 	    }});
 
-
+	    
 		var legend = L.control({position: 'bottomright'});
 
 		legend.onAdd = function (map) {
