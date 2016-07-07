@@ -25,6 +25,10 @@
 			float:left;
 		}
 
+		#cities{
+			width: 400px;
+		}
+
 		.info {
 			padding: 6px 8px;
 			font: 14px/16px Arial, Helvetica, sans-serif;
@@ -66,6 +70,8 @@
 	<!-- <script type="text/javascript" src="us-states.js"></script> -->
 	<script type="text/javascript">
 
+		city_circles = [];
+
 		function coordsToLatLng(coord) {
 	      longitude = coord[1];
 	      latitude = coord[0];
@@ -79,7 +85,7 @@
 	        return latlng.wrap();
 	    }
 
-		var map = new L.Map("map", {center: [30, 5], zoom: 2, noWrap: true, minZoom: 2, maxZoom: 6})
+		var map = new L.Map("map", {center: [30, 5], zoom: 2, noWrap: true, minZoom: 2, maxZoom: 9})
     		.addLayer(new L.TileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"));
 
 		// control that shows state info on hover
@@ -119,7 +125,7 @@
 				weight: 1,
 				opacity: 1,
 				color: 'white',
-				fillOpacity: 0.6,
+				fillOpacity: 0.5,
 				fillColor: "job_num" in feature.properties ? getColor(feature.properties.job_num) : '#EEE'
 			};
 		}
@@ -129,7 +135,7 @@
 				weight: 1,
 				opacity: 1,
 				color: 'white',
-				fillOpacity: 0.6,
+				fillOpacity: 0.5,
 				fillColor: '#EEE'
 			};
 		}
@@ -139,7 +145,7 @@
 				weight: 5,
 				opacity: 1,
 				color: '#666',
-				fillOpacity: 0.6,
+				fillOpacity: 0.5,
 				fillColor: '#EEE'
 			};
 		}
@@ -160,19 +166,21 @@
 
 		function highlightFeature(e) {
 			var layer = e.target;
+			info.update(layer.feature.properties);
+			if (!("job_num" in layer.feature.properties)){
+				return;
+			}
 			layer.setStyle({
-				weight: 5,
-				color: '#666',
+				weight: 2,
+				color: layer.feature.properties.current_style.color,
 				dashArray: '',
-				fillOpacity: 0.6,
-				fillColor: '#00FF00' // getColor(layer.feature.properties.job_num)
+				fillOpacity: 0.7,
+				fillColor: layer.feature.properties.current_style.fillColor // getColor(layer.feature.properties.job_num)
 			});
 
 			// if (!L.Browser.ie && !L.Browser.opera) {
 			// 	layer.bringToFront();
 			// }
-
-			info.update(layer.feature.properties);
 		}
 
 		var geojson;
@@ -297,6 +305,31 @@
 			      	  }
 			      	  layer.bringToBack();
 				    }});
+      	  		}
+      	  		else {
+      	  			for (var circle_index in city_circles){
+      	  				circle = city_circles[circle_index];
+      	  				map.removeLayer(circle);
+      	  			}
+      	  			$.ajax({url: "https://9fyijdukrl.execute-api.us-east-1.amazonaws.com/prod/cities/" + layer.feature.properties.country_code, success: function(result){
+
+      	  					all_values = [];
+      	  					for (var record_idx in result){
+      	  						record = result[record_idx];
+      	  						all_values.push(record.count);
+      	  					}
+
+      	  					max_count = Math.max.apply(Math, all_values);
+
+      	  					for (var record_idx in result){
+      	  						record = result[record_idx];
+      	  						radius = 50000*record.count/max_count;
+      	  						circle = L.circle([record.lat, record.lon], radius, {color: 'black'});
+      	  						circle.addTo(map);
+      	  						city_circles.push(circle);
+      	  					}
+      	  				}
+      	  			});
       	  		}
       	  		// country clicked, not to be expanded
       	  		for (var layer_idx in geojson._layers){
