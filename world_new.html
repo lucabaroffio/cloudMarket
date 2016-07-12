@@ -98,10 +98,17 @@
 		};
 
 		info.update = function (props) {
-			this._div.innerHTML = '<h4>Cloud job market</h4>' +  (props ?
-				'<b>' + ("country_name" in props ? props.country_name : props.state_name) + '</b><br />' + 
-				("job_num" in props ? props.job_num + ' cloud computing jobs' : 'No data')
-				: 'Hover over a state');
+			if (props && ("location" in props)){
+				this._div.innerHTML = '<h4>Cloud job market</h4>' +
+				'<b>' + props.location + '</b><br />' + 
+				props.count + ' cloud computing jobs'
+			}
+			else{
+				this._div.innerHTML = '<h4>Cloud job market</h4>' +  (props ?
+					'<b>' + ("country_name" in props ? props.country_name : props.state_name) + '</b><br />' + 
+					("job_num" in props ? props.job_num + ' cloud computing jobs' : 'No data')
+					: 'Hover over an element');
+			}
 		};
 
 		info.addTo(map);
@@ -269,11 +276,12 @@
 			update_job_titles($("#job_titles"), country, state);
 			update_job_locations($("#job_locations"), country, state);
 
-			// country clicked
 			if ("country_code" in layer.feature.properties){
+				// country clicked
 				var country_code = layer.feature.properties.country_code;
-				// a country to be expanded
+				
 				if (check_countries(country_code)){
+					// a country to be expanded
 					$.ajax({url: "https://9fyijdukrl.execute-api.us-east-1.amazonaws.com/prod/numjobs/" + layer.feature.properties.country_code, success: function(result){
 					      	  
 			      	  for (var layer_idx in geojson._layers){
@@ -307,10 +315,14 @@
 				    }});
       	  		}
       	  		else {
+      	  			// country clicked, not to be expanded
       	  			for (var circle_index in city_circles){
       	  				circle = city_circles[circle_index];
       	  				map.removeLayer(circle);
       	  			}
+
+      	  			city_circles = []
+
       	  			$.ajax({url: "https://9fyijdukrl.execute-api.us-east-1.amazonaws.com/prod/cities/" + layer.feature.properties.country_code, success: function(result){
 
       	  					all_values = [];
@@ -323,15 +335,20 @@
 
       	  					for (var record_idx in result){
       	  						record = result[record_idx];
-      	  						radius = 50000*record.count/max_count;
+      	  						radius = 20000*record.count/max_count + 15*record.count;
       	  						circle = L.circle([record.lat, record.lon], radius, {color: 'black'});
+      	  						circle.properties = {};
+      	  						circle.properties.location = record.location;
+      	  						circle.properties.count = record.count; 
       	  						circle.addTo(map);
+      	  						circle.on('mouseover', function(e){
+								    info.update(e.target.properties);
+								});
       	  						city_circles.push(circle);
       	  					}
       	  				}
       	  			});
       	  		}
-      	  		// country clicked, not to be expanded
       	  		for (var layer_idx in geojson._layers){
 			      	var layer_temp = geojson._layers[layer_idx];
 			      	  	
@@ -346,6 +363,42 @@
 			      		layer_temp.bringToFront();
 			      	}
 			    }
+      	  	}
+      	  	else{
+      	  		// a state to be expanded
+
+				for (var circle_index in city_circles){
+  	  				circle = city_circles[circle_index];
+  	  				map.removeLayer(circle);
+  	  			}
+
+  	  			city_circles = []
+
+  	  			$.ajax({url: "https://9fyijdukrl.execute-api.us-east-1.amazonaws.com/prod/cities/" + layer.feature.properties.parent_country + '/' + layer.feature.properties.state_code, success: function(result){
+
+  	  					all_values = [];
+  	  					for (var record_idx in result){
+  	  						record = result[record_idx];
+  	  						all_values.push(record.count);
+  	  					}
+
+  	  					max_count = Math.max.apply(Math, all_values);
+
+  	  					for (var record_idx in result){
+  	  						record = result[record_idx];
+  	  						radius = 20000*record.count/max_count + 15*record.count;
+  	  						circle = L.circle([record.lat, record.lon], radius, {color: 'black'});
+  	  						circle.properties = {};
+  	  						circle.properties.location = record.location;
+  	  						circle.properties.count = record.count; 
+  	  						circle.addTo(map);
+  	  						circle.on('mouseover', function(e){
+							    info.update(e.target.properties);
+							});
+  	  						city_circles.push(circle);
+  	  					}
+  	  				}
+  	  			});
       	  	}
       	  	selected = layer;
 		}
